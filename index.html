@@ -41,11 +41,8 @@
   .day.today .dn{font-weight:600;color:#3a7dd8}
   .day.selected{background:#1a1a1a;border-color:#1a1a1a}
   .day.selected .dn{color:#fff;font-weight:600}
-  .day.selected .day-bar{opacity:0.8}
-  .day-bar{width:22px;height:3px;border-radius:2px;margin-top:3px}
-  .day-bar.pos{background:#1aaa7a}.day-bar.neg{background:#e04545}
-  .day-amt{font-size:9px;margin-top:2px;line-height:1;font-weight:500}
-  .day-amt.pos{color:#0a6644}.day-amt.neg{color:#8a1c1c}
+  .day-amt{font-size:9px;margin-top:3px;line-height:1;font-weight:600}
+  .day-amt.pos{color:#1a6fd4}.day-amt.neg{color:#e04545}
 
   /* パネル */
   .panel{padding:0 12px}
@@ -172,12 +169,10 @@ function renderCal(){
     const c=document.createElement('div');
     c.className='day'+(dow===0?' sun':dow===6?' sat':'')+(isToday?' today':'')+(sel===k?' selected':'');
     let html=`<span class="dn">${d}</span>`;
-    if(s&&(s.bet>0||s.ret>0)){
-      html+=`<div class="day-bar ${s.pnl>=0?'pos':'neg'}"></div>`;
-      if(Math.abs(s.pnl)>=100){
-        const a=(s.pnl>=0?'+':'')+Math.round(s.pnl/1000)+'k';
-        html+=`<span class="day-amt ${s.pnl>=0?'pos':'neg'}">${a}</span>`;
-      }
+    if(s&&s.pnl!==0&&(s.bet>0||s.ret>0)){
+      const cls=s.pnl>0?'pos':'neg';
+      const amt=(s.pnl>0?'+':'')+s.pnl.toLocaleString();
+      html+=`<span class="day-amt ${cls}">${amt}</span>`;
     }
     c.innerHTML=html;
     c.addEventListener('click',()=>{sel=k;render();});
