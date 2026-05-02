@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="theme-color" content="#1a1a1a">
+<title>競馬収支</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;background:#f5f5f0;font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans','Hiragino Kaku Gothic ProN','Noto Sans JP',sans-serif}
+  .app{max-width:430px;margin:0 auto;min-height:100vh;background:#f5f5f0;padding-bottom:2rem}
+
+  /* ヘッダー */
+  .header{background:#1a1a1a;padding:16px 16px 14px;border-radius:0 0 20px 20px;margin-bottom:16px}
+  .header-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+  .app-title{font-size:16px;font-weight:600;color:#fff;letter-spacing:0.06em}
+  .month-nav{display:flex;align-items:center;gap:10px}
+  .nav-btn{background:rgba(255,255,255,0.13);border:none;border-radius:8px;width:34px;height:34px;cursor:pointer;font-size:18px;color:#fff;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent}
+  .nav-btn:active{background:rgba(255,255,255,0.25)}
+  .month-label{font-size:15px;font-weight:500;color:#fff;min-width:82px;text-align:center}
+  .h-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
+  .h-stat{background:rgba(255,255,255,0.08);border-radius:10px;padding:8px 10px}
+  .h-stat-label{font-size:10px;color:rgba(255,255,255,0.5);margin-bottom:3px}
+  .h-stat-val{font-size:18px;font-weight:600;color:#fff}
+
+  /* カレンダー */
+  .cal-wrap{padding:0 12px;margin-bottom:14px}
+  .dow-row{display:grid;grid-template-columns:repeat(7,1fr);margin-bottom:5px}
+  .dow{text-align:center;font-size:11px;color:#888;padding:2px 0}
+  .dow.sun{color:#e05050}.dow.sat{color:#3a7dd8}
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+  .day{min-height:48px;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;padding:2px;-webkit-tap-highlight-color:transparent;background:#fff;border:1px solid #ebebeb}
+  .day:active{opacity:0.6}
+  .day.other{background:#f0efe9;border-color:#e8e8e2}
+  .day.other .dn{color:#bbb}
+  .day.sun .dn{color:#e05050}.day.sat .dn{color:#3a7dd8}
+  .dn{font-size:13px;color:#222;line-height:1}
+  .day.today{border-color:#3a7dd8;border-width:1.5px}
+  .day.today .dn{font-weight:600;color:#3a7dd8}
+  .day.selected{background:#1a1a1a;border-color:#1a1a1a}
+  .day.selected .dn{color:#fff;font-weight:600}
+  .day.selected .day-bar{opacity:0.8}
+  .day-bar{width:22px;height:3px;border-radius:2px;margin-top:3px}
+  .day-bar.pos{background:#1aaa7a}.day-bar.neg{background:#e04545}
+  .day-amt{font-size:9px;margin-top:2px;line-height:1;font-weight:500}
+  .day-amt.pos{color:#0a6644}.day-amt.neg{color:#8a1c1c}
+
+  /* パネル */
+  .panel{padding:0 12px}
+  .panel-card{background:#fff;border:1px solid #e8e8e2;border-radius:18px;overflow:hidden}
+  .panel-head{padding:13px 16px 11px;border-bottom:1px solid #f0efe9;display:flex;align-items:center;justify-content:space-between}
+  .panel-date{font-size:15px;font-weight:600;color:#1a1a1a}
+  .panel-pnl{font-size:14px;font-weight:600}
+  .panel-pnl.pos{color:#1aaa7a}.panel-pnl.neg{color:#e04545}
+
+  .race-list{padding:4px 16px}
+  .race-item{padding:12px 0;border-bottom:1px solid #f0efe9}
+  .race-item:last-child{border-bottom:none}
+  .race-top{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+  .race-name-input{flex:1;background:#f5f5f0;border:none;border-radius:8px;padding:8px 10px;font-size:13px;color:#1a1a1a;font-family:inherit;outline:none;-webkit-appearance:none}
+  .race-name-input::placeholder{color:#bbb}
+  .del-btn{background:none;border:none;color:#bbb;font-size:20px;cursor:pointer;line-height:1;padding:0 2px;flex-shrink:0;-webkit-tap-highlight-color:transparent}
+  .del-btn:active{color:#e04545}
+  .race-inputs{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .input-group{display:flex;flex-direction:column;gap:4px}
+  .input-label{font-size:11px;color:#888;font-weight:500}
+  .input-wrap{display:flex;align-items:center;gap:4px;background:#f5f5f0;border-radius:8px;padding:8px 10px}
+  .input-wrap input{background:none;border:none;font-size:16px;color:#1a1a1a;width:100%;text-align:right;outline:none;font-family:inherit;-webkit-appearance:none}
+  .input-wrap input::placeholder{color:#ccc}
+  .input-unit{font-size:12px;color:#999;white-space:nowrap}
+
+  .add-row{padding:10px 16px 12px}
+  .add-btn{width:100%;background:#f5f5f0;border:none;border-radius:10px;padding:11px;font-size:14px;color:#666;cursor:pointer;font-family:inherit;-webkit-tap-highlight-color:transparent}
+  .add-btn:active{background:#eaeae5}
+
+  .hint{padding:2rem;text-align:center;color:#aaa;font-size:14px}
+
+  /* PWA対応 */
+  @media(display-mode:standalone){
+    .header{padding-top:calc(16px + env(safe-area-inset-top))}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="header">
+    <div class="header-top">
+      <span class="app-title">競馬収支</span>
+      <div class="month-nav">
+        <button class="nav-btn" id="prev-btn">&#8249;</button>
+        <span class="month-label" id="month-label"></span>
+        <button class="nav-btn" id="next-btn">&#8250;</button>
+      </div>
+    </div>
+    <div class="h-stats">
+      <div class="h-stat"><div class="h-stat-label">今月収支</div><div class="h-stat-val" id="h-pnl">¥0</div></div>
+      <div class="h-stat"><div class="h-stat-label">回収率</div><div class="h-stat-val" id="h-roi">－</div></div>
+      <div class="h-stat"><div class="h-stat-label">開催日数</div><div class="h-stat-val" id="h-days">0日</div></div>
+    </div>
+  </div>
+
+  <div class="cal-wrap">
+    <div class="dow-row">
+      <div class="dow sun">日</div><div class="dow">月</div><div class="dow">火</div>
+      <div class="dow">水</div><div class="dow">木</div><div class="dow">金</div><div class="dow sat">土</div>
+    </div>
+    <div class="cal-grid" id="cal-grid"></div>
+  </div>
+
+  <div class="panel" id="panel"></div>
+
+</div>
+<script>
+let store={};
+try{store=JSON.parse(localStorage.getItem('keiba-v3')||'{}');}catch(e){}
+function save(){try{localStorage.setItem('keiba-v3',JSON.stringify(store));}catch(e){}}
+
+const today=new Date();
+let vy=today.getFullYear(),vm=today.getMonth();
+let sel=dk(vy,vm,today.getDate());
+
+function dk(y,m,d){return `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;}
+
+function dayStats(k){
+  const r=store[k];
+  if(!r||!r.length)return null;
+  let bet=0,ret=0;
+  r.forEach(x=>{bet+=x.bet||0;ret+=x.ret||0;});
+  return{bet,ret,pnl:ret-bet};
+}
+
+function monthStats(y,m){
+  let bet=0,ret=0,days=0;
+  for(let d=1;d<=31;d++){
+    const s=dayStats(dk(y,m,d));
+    if(s&&(s.bet>0||s.ret>0)){bet+=s.bet;ret+=s.ret;days++;}
+  }
+  return{bet,ret,pnl:ret-bet,days};
+}
+
+function renderHeader(){
+  const s=monthStats(vy,vm);
+  const el=document.getElementById('h-pnl');
+  el.textContent=(s.pnl>=0?'+':'')+s.pnl.toLocaleString()+'円';
+  el.style.color=s.pnl<0?'#f08080':'#fff';
+  document.getElementById('h-roi').textContent=s.bet>0?Math.round(s.ret/s.bet*100)+'%':'－';
+  document.getElementById('h-days').textContent=s.days+'日';
+  document.getElementById('month-label').textContent=`${vy}年${vm+1}月`;
+}
+
+function renderCal(){
+  const grid=document.getElementById('cal-grid');
+  grid.innerHTML='';
+  const first=new Date(vy,vm,1).getDay();
+  const last=new Date(vy,vm+1,0).getDate();
+  const prevLast=new Date(vy,vm,0).getDate();
+
+  for(let i=0;i<first;i++){
+    const c=document.createElement('div');
+    c.className='day other';
+    c.innerHTML=`<span class="dn">${prevLast-first+1+i}</span>`;
+    grid.appendChild(c);
+  }
+  for(let d=1;d<=last;d++){
+    const k=dk(vy,vm,d);
+    const dow=new Date(vy,vm,d).getDay();
+    const isToday=d===today.getDate()&&vm===today.getMonth()&&vy===today.getFullYear();
+    const s=dayStats(k);
+    const c=document.createElement('div');
+    c.className='day'+(dow===0?' sun':dow===6?' sat':'')+(isToday?' today':'')+(sel===k?' selected':'');
+    let html=`<span class="dn">${d}</span>`;
+    if(s&&(s.bet>0||s.ret>0)){
+      html+=`<div class="day-bar ${s.pnl>=0?'pos':'neg'}"></div>`;
+      if(Math.abs(s.pnl)>=100){
+        const a=(s.pnl>=0?'+':'')+Math.round(s.pnl/1000)+'k';
+        html+=`<span class="day-amt ${s.pnl>=0?'pos':'neg'}">${a}</span>`;
+      }
+    }
+    c.innerHTML=html;
+    c.addEventListener('click',()=>{sel=k;render();});
+    grid.appendChild(c);
+  }
+  const rem=42-first-last;
+  for(let d=1;d<=rem;d++){
+    const c=document.createElement('div');
+    c.className='day other';
+    c.innerHTML=`<span class="dn">${d}</span>`;
+    grid.appendChild(c);
+  }
+}
+
+function renderPanel(){
+  const panel=document.getElementById('panel');
+  if(!sel){panel.innerHTML='<div class="hint">日付をタップして記録する</div>';return;}
+  const[y,m,d]=sel.split('-').map(Number);
+  const dow=new Date(y,m-1,d).getDay();
+  const DOWS=['日','月','火','水','木','金','土'];
+  if(!store[sel])store[sel]=[{name:'',bet:0,ret:0}];
+  if(store[sel].length===0)store[sel].push({name:'',bet:0,ret:0});
+  const races=store[sel];
+  const s=dayStats(sel);
+
+  let pnlHtml='';
+  if(s&&(s.bet>0||s.ret>0)){
+    const sign=s.pnl>=0?'+':'';
+    const cls=s.pnl>=0?'pos':'neg';
+    pnlHtml=`<span class="panel-pnl ${cls}">${sign}${s.pnl.toLocaleString()}円</span>`;
+  }
+
+  const racesHtml=races.map((r,i)=>`
+    <div class="race-item">
+      <div class="race-top">
+        <input class="race-name-input" type="text" placeholder="レース名（任意）" value="${(r.name||'').replace(/"/g,'&quot;')}" onchange="upName(${i},this.value)">
+        <button class="del-btn" onclick="delRace(${i})">×</button>
+      </div>
+      <div class="race-inputs">
+        <div class="input-group">
+          <span class="input-label">投資額</span>
+          <div class="input-wrap">
+            <input type="number" inputmode="numeric" placeholder="0" value="${r.bet||''}" onchange="upBet(${i},this.value)">
+            <span class="input-unit">円</span>
+          </div>
+        </div>
+        <div class="input-group">
+          <span class="input-label">回収額（的中時のみ）</span>
+          <div class="input-wrap">
+            <input type="number" inputmode="numeric" placeholder="0" value="${r.ret||''}" onchange="upRet(${i},this.value)">
+            <span class="input-unit">円</span>
+          </div>
+        </div>
+      </div>
+    </div>`).join('');
+
+  panel.innerHTML=`
+    <div class="panel-card">
+      <div class="panel-head">
+        <span class="panel-date">${m}月${d}日（${DOWS[dow]}）</span>
+        ${pnlHtml}
+      </div>
+      <div class="race-list">${racesHtml}</div>
+      <div class="add-row">
+        <button class="add-btn" onclick="addRace()">＋ レースを追加</button>
+      </div>
+    </div>`;
+}
+
+function addRace(){
+  if(!store[sel])store[sel]=[];
+  store[sel].push({name:'',bet:0,ret:0});
+  save();renderPanel();
+}
+function delRace(i){
+  store[sel].splice(i,1);
+  if(!store[sel].length)delete store[sel];
+  save();render();
+}
+function upName(i,v){if(store[sel]&&store[sel][i])store[sel][i].name=v;save();}
+function upBet(i,v){store[sel][i].bet=parseInt(v)||0;save();renderHeader();renderCal();refreshPnl();}
+function upRet(i,v){store[sel][i].ret=parseInt(v)||0;save();renderHeader();renderCal();refreshPnl();}
+
+function refreshPnl(){
+  const s=dayStats(sel);
+  const head=document.querySelector('.panel-head');
+  if(!head)return;
+  let el=head.querySelector('.panel-pnl');
+  if(s&&(s.bet>0||s.ret>0)){
+    const sign=s.pnl>=0?'+':'';
+    const cls=s.pnl>=0?'pos':'neg';
+    if(!el){el=document.createElement('span');el.className='panel-pnl '+cls;head.appendChild(el);}
+    el.textContent=sign+s.pnl.toLocaleString()+'円';
+    el.className='panel-pnl '+cls;
+  }else if(el){el.remove();}
+}
+
+function render(){renderHeader();renderCal();renderPanel();}
+
+document.getElementById('prev-btn').addEventListener('click',()=>{vm--;if(vm<0){vm=11;vy--;}sel=null;render();});
+document.getElementById('next-btn').addEventListener('click',()=>{vm++;if(vm>11){vm=0;vy++;}sel=null;render();});
+
+render();
+</script>
+</body>
+</html>
